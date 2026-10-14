@@ -54,7 +54,8 @@ export function createRenderer(canvas, library) {
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     width = rect.width;
     height = rect.height;
-    worldWidth = Math.max(600, Math.min(960, (width / height) * 540));
+    // Match the visible width exactly; a 600 minimum pushes the player off-screen on portrait phones.
+    worldWidth = Math.max(1, Math.min(960, (width / height) * 540));
   }
   observer.observe(canvas);
   resize();
@@ -69,6 +70,7 @@ export function createRenderer(canvas, library) {
 
   function drawBackdrop(key, cameraX, flash = 0) {
     const image = library.images[key];
+    if (!image) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const scale = Math.max(width / image.width, height / image.height);
     const drawW = image.width * scale;

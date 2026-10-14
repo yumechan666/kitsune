@@ -76,6 +76,12 @@ export function createAudio(sdk, initialVolume = 0.16) {
     setStage(index) {
       stage = Math.abs(index) % STAGE_NOTES.length;
       step = 0;
+      // The tempo is chosen when the interval starts, so restart it for the new stage.
+      if (timer) {
+        window.clearInterval(timer);
+        timer = undefined;
+        startMusic();
+      }
     },
     setVolume(value) {
       volume = value;

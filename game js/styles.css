@@ -308,6 +308,31 @@ button {
   pointer-events: none;
 }
 
+.move-stick {
+  pointer-events: auto;
+  position: relative;
+  width: clamp(120px, 30cqmin, 160px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  border: 2px solid rgba(160, 230, 255, 0.45);
+  background: radial-gradient(circle at 50% 40%, rgba(40, 70, 130, 0.55), rgba(5, 9, 27, 0.75));
+  touch-action: none;
+  user-select: none;
+}
+
+.move-stick-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: radial-gradient(circle at 35% 30%, #cfeeff, #3a6bd6 70%);
+  box-shadow: 0 0 14px rgba(73, 232, 255, 0.55);
+  pointer-events: none;
+}
+
 .move-pad,
 .action-pad {
   pointer-events: auto;

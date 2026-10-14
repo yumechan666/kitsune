@@ -31,6 +31,14 @@ class InputState {
     held[action] = value;
   }
 
+  // Key-up and pointer-up events are lost when focus leaves the window, which
+  // would leave a direction held and the character walking on its own.
+  void releaseAll() {
+    for (final action in held.keys.toList()) {
+      set(action, false);
+    }
+  }
+
   bool consume(String action) {
     if (!pressed.contains(action)) return false;
     pressed.remove(action);

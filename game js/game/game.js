@@ -28,9 +28,8 @@ function shellMarkup() {
       <div class="boss-hud" data-ui="boss" hidden><span data-ui="boss-name"></span><b><i data-ui="boss-fill"></i></b></div>
       <div class="game-toast" data-ui="toast"></div>
       <div class="touch-controls" aria-label="Touch controls">
-        <div class="move-pad">
-          <button class="move-btn move-btn--left" data-action="left" aria-label="Move left">‹</button>
-          <button class="move-btn move-btn--right" data-action="right" aria-label="Move right">›</button>
+        <div class="move-stick" data-stick aria-label="Move joystick">
+          <i class="move-stick-knob"></i>
         </div>
         <div class="action-pad">
           <button class="action-btn action-btn--ofuda" data-action="ofuda" aria-label="Ofuda"><span>札</span><i data-ui="ofuda-fill"></i></button>
@@ -206,7 +205,7 @@ export function createGame({ mount, sdk, ready, tweaks, assets }) {
           world?.setPaused(false);
           ui.hideOverlay();
         } else if (action === "restart") {
-          void createStage(stageIndex).then(() => {
+          void createStage(stageIndex, carry).then(() => {
             paused = false;
             playing = true;
             ui.hideOverlay();
@@ -216,10 +215,12 @@ export function createGame({ mount, sdk, ready, tweaks, assets }) {
       }
 
       function togglePause() {
-        if (!world) return;
+        // Ignore the button during rush transitions, where the world is between stages.
+        if (!world || (!playing && !paused)) return;
         paused = !paused;
         playing = !paused;
         world.setPaused(paused);
+        if (!paused) ui.hideOverlay();
         if (paused) ui.showOverlay({
           kicker: LEVELS[stageIndex].name,
           title: "Paused",

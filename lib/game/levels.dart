@@ -13,10 +13,10 @@ class Hazard {
   final double w;
   final double h;
   Hazard(num x, num y, num w, num h)
-      : x = x.toDouble(),
-        y = y.toDouble(),
-        w = w.toDouble(),
-        h = h.toDouble();
+    : x = x.toDouble(),
+      y = y.toDouble(),
+      w = w.toDouble(),
+      h = h.toDouble();
 }
 
 class EnemySpawn {
@@ -127,26 +127,46 @@ class EnemyStat {
     num? telegraphTime,
     this.melee = false,
     this.boss = false,
-  })  : hp = hp.toDouble(),
-        w = w.toDouble(),
-        h = h.toDouble(),
-        spriteH = spriteH.toDouble(),
-        score = score.toDouble(),
-        speed = speed.toDouble(),
-        attackDelay = attackDelay.toDouble(),
-        projectileSpeed = projectileSpeed.toDouble(),
-        telegraphTime = telegraphTime?.toDouble();
+  }) : hp = hp.toDouble(),
+       w = w.toDouble(),
+       h = h.toDouble(),
+       spriteH = spriteH.toDouble(),
+       score = score.toDouble(),
+       speed = speed.toDouble(),
+       attackDelay = attackDelay.toDouble(),
+       projectileSpeed = projectileSpeed.toDouble(),
+       telegraphTime = telegraphTime?.toDouble();
 }
 
-Platform floor(num x, num w, [num y = 466, num h = 130]) =>
-    Platform(x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble(), "platform");
-Platform ledge(num x, num y, [num w = 190, num h = 44]) =>
-    Platform(x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble(), "platform");
-Platform wall(num x, num y, [num w = 58, num h = 185]) =>
-    Platform(x.toDouble(), y.toDouble(), w.toDouble(), h.toDouble(), "platform");
-EnemySpawn enemy(String type, num x, [num y = 466, Map<String, dynamic> extra = const {}]) =>
-    EnemySpawn(type, x.toDouble(), y.toDouble(), Map.from(extra));
-Pickup pickup(String type, num x, num y) => Pickup(type, x.toDouble(), y.toDouble());
+Platform floor(num x, num w, [num y = 466, num h = 130]) => Platform(
+  x.toDouble(),
+  y.toDouble(),
+  w.toDouble(),
+  h.toDouble(),
+  "platform",
+);
+Platform ledge(num x, num y, [num w = 190, num h = 44]) => Platform(
+  x.toDouble(),
+  y.toDouble(),
+  w.toDouble(),
+  h.toDouble(),
+  "platform",
+);
+Platform wall(num x, num y, [num w = 58, num h = 185]) => Platform(
+  x.toDouble(),
+  y.toDouble(),
+  w.toDouble(),
+  h.toDouble(),
+  "platform",
+);
+EnemySpawn enemy(
+  String type,
+  num x, [
+  num y = 466,
+  Map<String, dynamic> extra = const {},
+]) => EnemySpawn(type, x.toDouble(), y.toDouble(), Map.from(extra));
+Pickup pickup(String type, num x, num y) =>
+    Pickup(type, x.toDouble(), y.toDouble());
 
 const STAGE_DEFS = [
   ["TORII MARKET", "Rainline shrine bazaar", "Gate Ox"],
@@ -156,7 +176,7 @@ const STAGE_DEFS = [
   ["DATA BAMBOO", "The encoded sacred grove", "Tengu Shogun"],
   ["MOON RAIL", "Last train through the clouds", "Moon Locomotive"],
   ["INARI VAULT", "The shrine beneath the ice", "Nine-Ice Guardian"],
-  ["CRIMSON FORUNDRY", "Spirit steel and living flame", "Furnace Giant"],
+  ["CRIMSON FOUNDRY", "Spirit steel and living flame", "Furnace Giant"],
   ["SPIRIT RIFT", "A city broken between worlds", "Thousand-Eye Wall"],
   ["CELESTIAL SHRINE", "The sun engine awakens", "Amaterasu Engine"],
 ];
@@ -213,13 +233,21 @@ Level buildStage(int index) {
     final floorWidth = 750 + ((i + index) % 2) * 35;
     platforms.add(floor(x, floorWidth.toDouble()));
     hazards.add(Hazard(x + floorWidth, 452, segment - floorWidth, 24));
-    platforms.add(ledge(x + 390, 350 - ((i + index) % 3) * 42, 190 + (i % 2) * 35));
+    platforms.add(
+      ledge(x + 390, 350 - ((i + index) % 3) * 42, 190 + (i % 2) * 35),
+    );
     if (i % 3 == 1) {
-      platforms.add(wall(x + 700, 280 - (index % 2) * 25, 58, 186 + (index % 3) * 22));
+      platforms.add(
+        wall(x + 700, 280 - (index % 2) * 25, 58, 186 + (index % 3) * 22),
+      );
     }
     enemies.add(enemy("s${number}_common", x + 520, 466));
-    if (i % 2 == 1) enemies.add(enemy("s${number}_rare", x + 700, 305 - (i % 3) * 25));
-    if (i > 0 && i % 3 == 0) enemies.add(enemy("s${number}_common", x + 250, 466));
+    if (i % 2 == 1) {
+      enemies.add(enemy("s${number}_rare", x + 700, 305 - (i % 3) * 25));
+    }
+    if (i > 0 && i % 3 == 0) {
+      enemies.add(enemy("s${number}_common", x + 250, 466));
+    }
     if (i % 2 == 0) pickups.add(pickup("spirit", x + 470, 295 - (i % 3) * 28));
     if (i == 2 || i == 6) pickups.add(pickup("tail", x + 610, 260));
   }
@@ -229,9 +257,14 @@ Level buildStage(int index) {
   platforms.add(ledge(arenaX + 210, 330, 210));
   platforms.add(ledge(arenaX + 710, 300, 190));
   final miniX = ((length * 0.52) / segment).floor() * segment + 520;
-  final checkpoints = [0.27, 0.54, 0.8]
-      .map((ratio) => ((length * ratio) / segment).floor() * segment + 180)
-      .toList();
+  // A lantern every third segment, placed on solid floor just past the first
+  // enemy (the spiked gap starts around x+750), plus the original milestones.
+  final checkpoints = <double>{
+    for (var i = 2; i < segmentCount; i += 3)
+      if (i * segment + 600.0 < length - 1150) i * segment + 600.0,
+    for (final ratio in [0.27, 0.54, 0.8])
+      ((length * ratio) / segment).floor() * segment + 180.0,
+  }.toList()..sort();
   final puzzles = <Puzzle>[];
   final ratios = PUZZLE_ACTIONS[index].length == 4
       ? [0.18, 0.4, 0.62, 0.82]
@@ -241,10 +274,18 @@ Level buildStage(int index) {
     final px = ((length * ratios[p]) / segment).floor() * segment + 610;
     puzzles.add(Puzzle(p, px.toDouble(), action, PUZZLE_HINTS[action]!));
   }
-  enemies.add(enemy("s${number}_mini", miniX.toDouble(), 466,
-      {"hp": 24 + index * 3, "miniBoss": true}));
-  enemies.add(enemy("s${number}_boss", (length - 470).toDouble(), 466,
-      {"hp": 52 + index * 8, "boss": true}));
+  enemies.add(
+    enemy("s${number}_mini", miniX.toDouble(), 466, {
+      "hp": 24 + index * 3,
+      "miniBoss": true,
+    }),
+  );
+  enemies.add(
+    enemy("s${number}_boss", (length - 470).toDouble(), 466, {
+      "hp": 52 + index * 8,
+      "boss": true,
+    }),
+  );
 
   return Level(
     id: number,
@@ -273,6 +314,7 @@ final ENEMY_STATS = <String, EnemyStat>{};
 void _buildEnemyStats() {
   for (int stage = 1; stage <= 10; stage += 1) {
     final difficulty = 1 + (stage - 1) * 0.12;
+    final p = stage.toString().padLeft(2, '0');
     ENEMY_STATS["s${stage}_common"] = EnemyStat(
       name: "Stage $stage Common",
       hp: (4 * difficulty).round(),
@@ -280,11 +322,11 @@ void _buildEnemyStats() {
       h: 55,
       spriteH: 66,
       score: 180 + stage * 25,
-      idle: "s${stage}_common_move",
-      move: "s${stage}_common_move",
-      attack: "s${stage}_common_attack",
-      hit: "s${stage}_common_move",
-      defeat: "s${stage}_common_move",
+      idle: "s${p}_common_move",
+      move: "s${p}_common_move",
+      attack: "s${p}_common_attack",
+      hit: "s${p}_common_move",
+      defeat: "s${p}_common_move",
       speed: 58 + stage * 2,
       attackDelay: 1.9,
       projectileSpeed: 285 + stage * 5,
@@ -296,11 +338,11 @@ void _buildEnemyStats() {
       h: 62,
       spriteH: 76,
       score: 420 + stage * 45,
-      idle: "s${stage}_rare_move",
-      move: "s${stage}_rare_move",
-      attack: "s${stage}_rare_attack",
-      hit: "s${stage}_rare_move",
-      defeat: "s${stage}_rare_move",
+      idle: "s${p}_rare_move",
+      move: "s${p}_rare_move",
+      attack: "s${p}_rare_attack",
+      hit: "s${p}_rare_move",
+      defeat: "s${p}_rare_move",
       speed: 72 + stage * 2,
       attackDelay: 1.55,
       projectileSpeed: 330 + stage * 6,
@@ -315,11 +357,11 @@ void _buildEnemyStats() {
       h: 88,
       spriteH: 108,
       score: 1800 + stage * 180,
-      idle: "s${stage}_mini_move",
-      move: "s${stage}_mini_move",
-      attack: "s${stage}_mini_attack",
-      hit: "s${stage}_mini_move",
-      defeat: "s${stage}_mini_move",
+      idle: "s${p}_mini_move",
+      move: "s${p}_mini_move",
+      attack: "s${p}_mini_attack",
+      hit: "s${p}_mini_move",
+      defeat: "s${p}_mini_move",
       speed: 56,
       attackDelay: 1.25,
       projectileSpeed: 350,
@@ -333,11 +375,11 @@ void _buildEnemyStats() {
       h: 118,
       spriteH: 142,
       score: 5000 + stage * 650,
-      idle: "s${stage}_boss_move",
-      move: "s${stage}_boss_move",
-      attack: "s${stage}_boss_attack",
-      hit: "s${stage}_boss_move",
-      defeat: "s${stage}_boss_move",
+      idle: "s${p}_boss_move",
+      move: "s${p}_boss_move",
+      attack: "s${p}_boss_attack",
+      hit: "s${p}_boss_move",
+      defeat: "s${p}_boss_move",
       speed: 44 + stage,
       attackDelay: 1.05,
       projectileSpeed: 380 + stage * 6,

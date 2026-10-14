@@ -11,7 +11,17 @@ class Renderer {
   double height = 1;
   double worldWidth = 600;
   ui.Canvas? canvas;
+
+  // When an animation with this name is drawn, debugTrackInfo receives the
+  // frame that was picked and where the sprite was placed (for position logs).
+  String? debugTrackName;
+  String? debugTrackInfo;
   final Set<String> _reportedMissingFrames = {};
+  final Random _rng = Random();
+  final ui.Paint _sprite = ui.Paint()..filterQuality = ui.FilterQuality.medium;
+
+  ui.Paint _spritePaint(double alpha) =>
+      _sprite..color = ui.Color.fromRGBO(255, 255, 255, alpha.clamp(0.0, 1.0));
   final Set<String> _reportedErrors = {};
 
   Renderer(this.library);
@@ -44,10 +54,17 @@ class Renderer {
     // Keep the world viewport at the screen's aspect ratio. A 600-unit
     // minimum crops the player off-screen on portrait phones because the
     // renderer scales the world to the full screen height.
-    worldWidth = min(960, max(1, (width / height) * 540));
+    // Landscape phones reach about 2.2:1, so the cap must allow ~1200 units.
+    worldWidth = min(1400, max(1, (width / height) * 540));
   }
 
-  void begin(Level level, double cameraX, double time, double shake, double flash) {
+  void begin(
+    Level level,
+    double cameraX,
+    double time,
+    double shake,
+    double flash,
+  ) {
     final c = canvas;
     if (c == null) return;
     c.save();
@@ -57,8 +74,8 @@ class Renderer {
     c.save();
     final scale = height / 540;
     final offsetX = (width - worldWidth * scale) / 2;
-    final sx = shake != 0 ? (Random().nextDouble() - 0.5) * shake : 0.0;
-    final sy = shake != 0 ? (Random().nextDouble() - 0.5) * shake : 0.0;
+    final sx = shake != 0 ? (_rng.nextDouble() - 0.5) * shake : 0.0;
+    final sy = shake != 0 ? (_rng.nextDouble() - 0.5) * shake : 0.0;
     c.translate(offsetX + sx, sy);
     c.scale(scale, scale);
     c.translate(-cameraX, 0);
@@ -84,8 +101,13 @@ class Renderer {
           ),
       );
       if (flash > 0) {
-        c.drawRect(ui.Rect.fromLTWH(0, 0, width, height),
-            ui.Paint()..color = const ui.Color(0xFFAADCFF).withAlpha((flash * 255).round()));
+        c.drawRect(
+          ui.Rect.fromLTWH(0, 0, width, height),
+          ui.Paint()
+            ..color = const ui.Color(
+              0xFFAADCFF,
+            ).withAlpha((flash * 255).round()),
+        );
       }
       return;
     }
@@ -97,14 +119,32 @@ class Renderer {
     for (int i = 0; i < 4; i += 1) {
       final x = start + i * drawW;
       if (i % 2 == 0) {
-        c.drawImageRect(image, ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-            ui.Rect.fromLTWH(x, (height - drawH) / 2, drawW, drawH), ui.Paint());
+        c.drawImageRect(
+          image,
+          ui.Rect.fromLTWH(
+            0,
+            0,
+            image.width.toDouble(),
+            image.height.toDouble(),
+          ),
+          ui.Rect.fromLTWH(x, (height - drawH) / 2, drawW, drawH),
+          _spritePaint(1),
+        );
       } else {
         c.save();
         c.translate(x + drawW, 0);
         c.scale(-1, 1);
-        c.drawImageRect(image, ui.Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-            ui.Rect.fromLTWH(0, (height - drawH) / 2, drawW, drawH), ui.Paint());
+        c.drawImageRect(
+          image,
+          ui.Rect.fromLTWH(
+            0,
+            0,
+            image.width.toDouble(),
+            image.height.toDouble(),
+          ),
+          ui.Rect.fromLTWH(0, (height - drawH) / 2, drawW, drawH),
+          _spritePaint(1),
+        );
         c.restore();
       }
     }
@@ -123,8 +163,11 @@ class Renderer {
         ),
     );
     if (flash > 0) {
-      c.drawRect(ui.Rect.fromLTWH(0, 0, width, height),
-          ui.Paint()..color = const ui.Color(0xFFAADCFF).withAlpha((flash * 255).round()));
+      c.drawRect(
+        ui.Rect.fromLTWH(0, 0, width, height),
+        ui.Paint()
+          ..color = const ui.Color(0xFFAADCFF).withAlpha((flash * 255).round()),
+      );
     }
   }
 
@@ -133,9 +176,15 @@ class Renderer {
     if (c == null) return;
     final paint = ui.Paint()
       ..strokeWidth = 1
-      ..color = stage % 3 == 2 ? const ui.Color(0x47AAD2FF) : const ui.Color(0x2E6EBEFF);
+      ..color = stage % 3 == 2
+          ? const ui.Color(0x47AAD2FF)
+          : const ui.Color(0x2E6EBEFF);
     for (int i = 0; i < 52; i += 1) {
-      final x = cameraX + ((i * 137 + time * (stage % 3 == 2 ? 420 : 250)) % (worldWidth + 80)) - 40;
+      final x =
+          cameraX +
+          ((i * 137 + time * (stage % 3 == 2 ? 420 : 250)) %
+              (worldWidth + 80)) -
+          40;
       final y = ((i * 83 + time * 310) % 590) - 30;
       c.drawLine(ui.Offset(x, y), ui.Offset(x - 7, y + 18), paint);
     }
@@ -146,15 +195,7 @@ class Renderer {
     if (c == null) return;
     final sheet = library.sheets[tileKey];
     final image = library.images[tileKey];
-    Frame? frame;
-    if (sheet != null) {
-      for (final candidate in sheet.framesList) {
-        if (candidate.name == "center") {
-          frame = candidate;
-          break;
-        }
-      }
-    }
+    final frame = sheet?.frames["center"];
     if (sheet == null || image == null || frame == null) {
       _reportMissingOnce(
         "platform:$tileKey",
@@ -178,14 +219,29 @@ class Renderer {
     final crop = frame.content;
     _safe("platform:$tileKey", () {
       c.save();
-      c.clipRect(ui.Rect.fromLTWH(platform.x, platform.y, platform.w, platform.h));
-      c.drawImageRect(image, crop,
-          ui.Rect.fromLTWH(platform.x, platform.y - 4, platform.w, platform.h + 8), ui.Paint());
+      c.clipRect(
+        ui.Rect.fromLTWH(platform.x, platform.y, platform.w, platform.h),
+      );
+      // The tile frame is cropped to the visible roof, so its top edge sits
+      // exactly on platform.y where the player's feet land.
+      c.drawImageRect(
+        image,
+        crop,
+        ui.Rect.fromLTWH(platform.x, platform.y, platform.w, platform.h),
+        _spritePaint(1),
+      );
       c.restore();
     });
   }
 
-  void drawStatic(String name, double x, double y, double w, double h, [double alpha = 1]) {
+  void drawStatic(
+    String name,
+    double x,
+    double y,
+    double w,
+    double h, [
+    double alpha = 1,
+  ]) {
     final c = canvas;
     if (c == null) return;
     final entry = library.frames[name];
@@ -198,7 +254,10 @@ class Renderer {
       _safe("static_fallback:$name", () {
         c.drawRect(
           ui.Rect.fromLTWH(x, y, w, h),
-          ui.Paint()..color = const ui.Color(0xFF3B4C8C).withAlpha((alpha * 255).round()),
+          ui.Paint()
+            ..color = const ui.Color(
+              0xFF3B4C8C,
+            ).withAlpha((alpha * 255).round()),
         );
       });
       return;
@@ -208,15 +267,29 @@ class Renderer {
       final s = min(w / crop.width, h / crop.height);
       final dw = crop.width * s;
       final dh = crop.height * s;
-      c.drawImageRect(image, crop,
-          ui.Rect.fromLTWH(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh),
-          ui.Paint()..color = const ui.Color(0xFFFFFFFF).withAlpha((alpha * 255).round()));
+      c.drawImageRect(
+        image,
+        crop,
+        ui.Rect.fromLTWH(x + (w - dw) / 2, y + (h - dh) / 2, dw, dh),
+        _spritePaint(alpha),
+      );
     });
   }
 
-  void drawAnchored(String name, double x, double y, double scale, int facing, double time,
-      [int fps = 10, double alpha = 1, double? progress,
-      double fallbackW = 40, double fallbackH = 56, ui.Color? fallbackColor]) {
+  void drawAnchored(
+    String name,
+    double x,
+    double y,
+    double scale,
+    int facing,
+    double time, [
+    int fps = 10,
+    double alpha = 1,
+    double? progress,
+    double fallbackW = 40,
+    double fallbackH = 56,
+    ui.Color? fallbackColor,
+  ]) {
     final c = canvas;
     if (c == null) return;
     final entry = library.animations[name];
@@ -227,8 +300,17 @@ class Renderer {
         'No animation named "$name" was loaded; drawing a placeholder.',
       );
       _safe("animation_fallback:$name", () {
-        _drawBox(c, x, y, fallbackW, fallbackH, scale, facing,
-            fallbackColor ?? const ui.Color(0xFFFF66CC), alpha);
+        _drawBox(
+          c,
+          x,
+          y,
+          fallbackW,
+          fallbackH,
+          scale,
+          facing,
+          fallbackColor ?? const ui.Color(0xFFFF66CC),
+          alpha,
+        );
       });
       return;
     }
@@ -242,12 +324,23 @@ class Renderer {
     final anchor = frame.anchor;
     final dx = -(anchor.dx - crop.left) * scale;
     final dy = -(anchor.dy - crop.top) * scale;
+    if (name == debugTrackName) {
+      debugTrackInfo =
+          "frame=$index/$count "
+          "crop=(${crop.left.round()},${crop.top.round()} "
+          "${crop.width.round()}x${crop.height.round()}) "
+          "offset=(${dx.toStringAsFixed(1)},${dy.toStringAsFixed(1)})";
+    }
     _safe("animation:$name", () {
       c.save();
       c.translate(x, y);
       c.scale(facing.toDouble(), 1);
-      c.drawImageRect(image, crop, ui.Rect.fromLTWH(dx, dy, crop.width * scale, crop.height * scale),
-          ui.Paint()..color = const ui.Color(0xFFFFFFFF).withAlpha((alpha * 255).round()));
+      c.drawImageRect(
+        image,
+        crop,
+        ui.Rect.fromLTWH(dx, dy, crop.width * scale, crop.height * scale),
+        _spritePaint(alpha),
+      );
       c.restore();
     });
   }
@@ -257,8 +350,17 @@ class Renderer {
     developer.log(message, name: 'kitsune.renderer', level: 900);
   }
 
-  void _drawBox(ui.Canvas c, double x, double y, double w, double h, double scale, int facing,
-      ui.Color color, double alpha) {
+  void _drawBox(
+    ui.Canvas c,
+    double x,
+    double y,
+    double w,
+    double h,
+    double scale,
+    int facing,
+    ui.Color color,
+    double alpha,
+  ) {
     final pw = w * scale;
     final ph = h * scale;
     c.save();

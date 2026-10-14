@@ -22,14 +22,9 @@ const stageKeys = (index) => {
   return [`WORLD_${id}`, `WORLD_${id}_ENEMIES`, `WORLD_${id}_BOSSES`, `WORLD_${id}_PUZZLE`, ...skinKeys(index)];
 };
 
-const PLAYER_ANIMATIONS = [
-  "idle", "run", "jump_up", "fall", "land", "spawn", "tail_gain", "checkpoint_revive",
-  "dash", "wall_slide", "wall_jump", "tail_glide", "shoot", "charge", "charged_release",
-  "ofuda_throw", "recoil_hit", "damage", "defeat", "air_dash", "spirit_transform",
-  "feral_idle", "feral_run", "feral_leap", "spirit_return", "claw_combo", "pounce",
-  "rising_slash", "landing_smash", "feral_hit", "kitsunebi", "charged_shot",
-  "ofuda_explosion", "dash_trail", "shadow_clone", "tail_volley", "transform_burst", "claw_arc",
-];
+// Skin sheets are swapped per stage; core sheets (FX_SHEET_C, OBJECT_ATLAS) stay loaded.
+const isSkinKey = (key) =>
+  key.startsWith("AKARI_") || key.startsWith("SKIN_") || key === "FX_SHEET_A" || key === "FX_SHEET_B";
 
 function addCompactSkinAliases(library) {
   const alias = (name, fallback) => {
@@ -110,9 +105,11 @@ export async function loadStageAssets(library, assets, index, onProgress = () =>
     for (const name of Object.keys(library.animations)) if (name.startsWith(prefix)) delete library.animations[name];
     for (const name of Object.keys(library.frames)) if (name.startsWith(prefix)) delete library.frames[name];
   }
-  for (const name of PLAYER_ANIMATIONS) delete library.animations[name];
+  for (const [name, entry] of Object.entries(library.animations)) {
+    if (isSkinKey(entry.key)) delete library.animations[name];
+  }
   for (const [name, entry] of Object.entries(library.frames)) {
-    if (entry.key.startsWith("AKARI_") || entry.key.startsWith("SKIN_") || entry.key === "FX_SHEET_A" || entry.key === "FX_SHEET_B") delete library.frames[name];
+    if (isSkinKey(entry.key)) delete library.frames[name];
   }
   await loadKeys(library, assets, stageKeys(index), onProgress);
   addCompactSkinAliases(library);
